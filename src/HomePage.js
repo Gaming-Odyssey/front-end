@@ -1,20 +1,12 @@
+'use strict'
+
 import React from 'react';
 import axios from 'axios';
-import Header from './Header.js';
-import Wishlist from './Wishlist.js';
-import Profile from './Profile';
-import { withAuth0 } from '@auth0/auth0-react';
-import './App.css';
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-} from "react-router-dom";
 import Button from 'react-bootstrap/Button';
 import ListGroup from 'react-bootstrap/ListGroup';
 import Container from 'react-bootstrap/Container';
 
-class App extends React.Component {
+class HomePage extends React.Component {
 
   constructor(props) {
     super(props);
@@ -27,7 +19,7 @@ class App extends React.Component {
 
   // sends request to server to get the list of upcoming games, and passes offset as a query (initially 0)
   getComingSoon = async () => {
-
+ 
     try {
       const response = await axios.get(`${process.env.REACT_APP_SERVER}/coming_soon?offset=${this.state.offset}`);
       this.setState({
@@ -57,6 +49,20 @@ class App extends React.Component {
     window.scrollTo(0, 0);
   }
 
+  
+
+  componentDidMount = async () => {
+    try {
+
+      let response = await axios.get(`${process.env.REACT_APP_SERVER}/gamelist`);
+      console.log(response.data);
+      this.setState({
+        wishlist: response.data
+      })
+    } catch (error) {
+      console.log(error.response);
+    }
+  }
 
   handleNewGame = async (addedGame) => {
     console.log('addedGame:', addedGame);
@@ -69,7 +75,7 @@ class App extends React.Component {
       title: addedGame.name,
       email: 'delightingreen@gmail.com',
       releaseDate: dateHuman,
-      note: '',
+      note: 'Testing Note',
     }
     try {
       let response = await axios.post('http://localhost:3001/gamelist', config);
@@ -83,11 +89,16 @@ class App extends React.Component {
     }
   }
 
-  render() {
-    const { isLoading, isAuthenticated } = this.props.auth0
-    console.log(this.props.auth0);
+  handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:3001/gamelist/${id}`);
+    } catch (error) {
+      console.log(error.response)
+    }
+  }
 
-    let comingSoonToRender = this.state.comingSoon.map((game, idx) => {
+  render() {
+    let comingSoonToRender = this.props.comingSoon.map((game, idx) => {
       let timestamp = game.first_release_date * 1000;
       let dateObject = new Date(timestamp);
       let dateHuman = `${dateObject.toLocaleString('default', { month: 'short' })} ${dateObject.getDate()}, ${dateObject.getFullYear()}`;
@@ -102,11 +113,11 @@ class App extends React.Component {
           <div>
             <div className="titleButtonGroup">
               <h4>{game.name}</h4>
-              {isAuthenticated ?
+              {this.props.isAuthenticated ?
                 <>
                   {match.length > 0 ?
                     <Button variant="link" disabled>Already in wishlist</Button>
-                    : <Button variant="outline-success" onClick={() => this.handleNewGame(game)}>Add to wishlist</Button>
+                    : <Button variant="outline-success" onClick={() => this.props.handleNewGame(game)}>Add to wishlist</Button>
                   }
                 </>
                 : <Button variant="link" disabled>Sign in to add to wishlist</Button>
@@ -130,50 +141,34 @@ class App extends React.Component {
       </ListGroup.Item>
     })
 
-    if (isLoading) {
-      return <h2>Still Loading...</h2>
-    } else {
-      return (
-        <Router>
-          <Header isAuthenticated={isAuthenticated} />
-          <Switch>
-            <Route exact path="/">
-              <Container>
-                <h1>Welcome to The Gaming Odyssey</h1>
-                <Button onClick={this.getComingSoon} variant="success">Show Upcoming!</Button>
-              </Container>
-              {this.state.comingSoon.length !== 0 ?
-                <Container>
-                  <div className="text-right">
-                    <Button variant="link" style={{ marginBottom: "5px" }} onClick={this.previousPage} disabled={this.state.offset > 0 ? false : true} >Previous Page</Button>
-                    {' '}
-                    <Button variant="link" style={{ marginBottom: "5px" }} onClick={this.nextPage}>Next Page</Button>
-                  </div>
-                  <ListGroup>
-                    {comingSoonToRender}
-                  </ListGroup>
-                  <div className="text-right">
-                    <Button variant="link" style={{ marginBottom: "5px" }} onClick={this.previousPage} disabled={this.state.offset > 0 ? false : true} >Previous Page</Button>
-                    {' '}
-                    <Button variant="link" style={{ marginBottom: "5px" }} onClick={this.nextPage}>Next Page</Button>
-                  </div>
-                </Container>
-                : ''}
-            </Route>
-            <Route exact path="/about-us">
-              <h1>About the Gaming Odyssey Team</h1>
-            </Route>
-            <Route exact path="/odyssey">
-              <Wishlist wishlist={this.state.wishlist} />
-            </Route>
-            <Route exact path="/profile">
-              <Profile />
-            </Route>
-          </Switch>
-        </Router>
-      );
-    }
+    return (
+      <>
+        <Container>
+          <h1>Welcome to The Gaming Odyssey</h1>
+          <Button onClick={this.getComingSoon} variant="success">Show Upcoming!</Button>
+        </Container>
+        {
+          this.state.comingSoon.length !== 0 ?
+            <Container>
+              <div className="text-right">
+                <Button variant="link" style={{ marginBottom: "5px" }} onClick={this.previousPage} disabled={this.state.offset > 0 ? false : true} >Previous Page</Button>
+                {' '}
+                <Button variant="link" style={{ marginBottom: "5px" }} onClick={this.nextPage}>Next Page</Button>
+              </div>
+              <ListGroup>
+                {comingSoonToRender}
+              </ListGroup>
+              <div className="text-right">
+                <Button variant="link" style={{ marginBottom: "5px" }} onClick={this.previousPage} disabled={this.state.offset > 0 ? false : true} >Previous Page</Button>
+                {' '}
+                <Button variant="link" style={{ marginBottom: "5px" }} onClick={this.nextPage}>Next Page</Button>
+              </div>
+            </Container>
+            : ''
+        }
+      </>
+    )
   }
 }
 
-export default withAuth0(App);
+export default HomePage

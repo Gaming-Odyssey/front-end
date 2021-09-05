@@ -2,7 +2,8 @@ import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Navbar from 'react-bootstrap/Navbar';
 import { Container, Nav, } from 'react-bootstrap';
-// import { Link } from "react-router-dom";
+import LoginButton from './LoginButton';
+import LogoutButton from './LogoutButton';
 
 class Header extends React.Component {
   render() {
@@ -14,6 +15,9 @@ class Header extends React.Component {
             <Nav.Link href="/">Home</Nav.Link>
             <Nav.Link href="/odyssey">Odysseys</Nav.Link>
             <Nav.Link href="/about-us">About Us</Nav.Link>
+            {this.props.isAuthenticated ?
+              <LogoutButton />
+              : <LoginButton />}
           </Nav>
         </Container>
       </Navbar>
